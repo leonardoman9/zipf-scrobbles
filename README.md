@@ -1,2 +1,2 @@
-![screenshot](data/example.png)
-![screenshot](data/example2.png)
+![screenshot](data/example_global.png)
+![screenshot](data/example2_user.png)_
