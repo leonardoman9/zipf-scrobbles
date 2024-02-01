@@ -6,23 +6,25 @@ def compute_zipf_values(most_listened_artist_scrobbles, n):
     zipf_values = [most_listened_artist_scrobbles / i for i in range(1, n + 1)]
     return zipf_values
 
-
-def get_top_artists(api_key, username, limit=20):
-    url = f"http://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user={username}&api_key={api_key}&format=json&limit={limit}"
+def get_top_artists(api_key, limit=20):
+    url = f"http://ws.audioscrobbler.com/2.0/?method=chart.gettopartists&api_key={api_key}&format=json&limit={limit}"
     response = requests.get(url)
     data = response.json()
 
-    if 'topartists' in data and 'artist' in data['topartists']:
+    if 'artists' in data and 'artist' in data['artists']:
         top_artists = {}
-        for artist in data['topartists']['artist']:
+        for artist in data['artists']['artist']:
             top_artists[artist['name']] = int(artist['playcount'])  # Corrected: use artist name as key
+
+        # Sort the dictionary by playcount in descending order
+        top_artists = dict(sorted(top_artists.items(), key=lambda item: item[1], reverse=True))
+        
         return top_artists
     else:
         print("Error: Unable to fetch top artists.")
         return None
 
-
-def plot_zipf_values(zipf_values, scrobbled_artists=None, username=None, limit=None):
+def plot_zipf_values(zipf_values, scrobbled_artists=None):
     x = np.arange(1, len(zipf_values) + 1)
     width = 0.35  # Width of the bars
 
@@ -33,16 +35,16 @@ def plot_zipf_values(zipf_values, scrobbled_artists=None, username=None, limit=N
         artists, listens = zip(*scrobbled_artists.items())
         scrobbled_bars = ax.bar(x + width / 2, listens, width, color='r', alpha=0.7, label='Scrobbled Artists')
 
-    ax.set_xlabel('Artist', fontsize=10)  # Set xlabel with smaller font size
-    ax.set_ylabel('Count', fontsize=10)  # Set ylabel with smaller font size
-    ax.set_title(f"Zipf Values and Top Scrobbled Artists\nTop {limit} artists of {username}", fontsize=12)  # Set title with smaller font size
+    ax.set_xlabel('Artist')  # Corrected: set xlabel to 'Artist'
+    ax.set_ylabel('Count')
+    ax.set_title('Zipf Values and Top Scrobbled Artists')
 
     # Set x-axis ticks and labels with artist names only
     x_labels = list(scrobbled_artists.keys())  # Corrected: use artist names
     ax.set_xticks(x)
-    ax.set_xticklabels(x_labels, rotation=90, fontsize=6)  # Rotate artist names and set smaller font size for x-axis labels
+    ax.set_xticklabels(x_labels, rotation=90, fontsize=6)  # Corrected: rotate artist names for better visibility
 
-    ax.legend(fontsize=8)  # Set legend with smaller font size
+    ax.legend()
 
     def autolabel(bars):
         """Attach a text label above each bar in *bars*, displaying its height."""
@@ -53,6 +55,7 @@ def plot_zipf_values(zipf_values, scrobbled_artists=None, username=None, limit=N
                         xytext=(0, 3),  # 3 points vertical offset
                         textcoords="offset points",
                         ha='center', va='bottom', rotation=90, fontsize=6)  # Rotate text vertically and set smaller font size
+
 
     autolabel(zipf_bars)
     if scrobbled_artists:
@@ -70,19 +73,13 @@ def read_api_key(filename='api_key.txt'):
         print(f"Error: API key file '{filename}' not found.")
         return None
 
-
 if __name__ == "__main__":
     # Replace 'YOUR_API_KEY' with your Last.fm API key
     api_key = read_api_key()
 
-    # Replace 'YOUR_USERNAME' with your Last.fm username
-    username = input("Username: ")
-
-    # Ask the user to specify the number of top artists to consider
+    # Fetch top global scrobbled artists with a variable limit
     limit = int(input("Enter the number of top artists you want to consider: "))
-
-    # Fetch top scrobbled artists
-    top_artists = get_top_artists(api_key, username, limit)
+    top_artists = get_top_artists(api_key, limit)
 
     if top_artists:
         # Get the number of scrobbles for the most listened artist
@@ -93,4 +90,4 @@ if __name__ == "__main__":
         zipf_values = compute_zipf_values(most_listened_artist_scrobbles, n)
 
         # Plot Zipf values and top scrobbled artists
-        plot_zipf_values(zipf_values, top_artists, username=username, limit=limit)
+        plot_zipf_values(zipf_values, top_artists)
