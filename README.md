@@ -1,2 +1,2 @@
 ![screenshot](data/example_global.png)
-![screenshot](data/example2_user.png)_
+![screenshot](data/example2_user.png)
